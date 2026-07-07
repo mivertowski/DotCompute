@@ -166,6 +166,91 @@ public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; 
         Assert.Contains("public static IReadOnlyList<KernelMetadata> GetAllKernels()", registry);
     }
 
+    // The GH #182 reporter's Mandelbrot benchmark kernel: a while-loop body whose extents
+    // (width, height) are NOT the trailing scalars (floats and maxIterations follow them).
+    private const string MandelbrotKernel = @"
+using System;
+namespace TestApp
+{
+    public static class Fractals
+    {
+        [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA, VectorSize = 8, IsParallel = true)]
+        public static void Mandelbrot(Span<int> output, int width, int height, float minX, float maxX, float minY, float maxY, int maxIterations)
+        {
+            int x = KernelContext.ThreadId.X;
+            int y = KernelContext.ThreadId.Y;
+
+            if (x >= width || y >= height)
+                return;
+
+            float real = minX + (maxX - minX) * x / (float)width;
+            float imag = minY + (maxY - minY) * y / (float)height;
+
+            float zReal = 0.0f;
+            float zImag = 0.0f;
+            int iterations = 0;
+
+            while (iterations < maxIterations && (zReal * zReal + zImag * zImag) < 4.0f)
+            {
+                float tempReal = zReal * zReal - zImag * zImag + real;
+                zImag = 2.0f * zReal * zImag + imag;
+                zReal = tempReal;
+                iterations++;
+            }
+
+            output[y * width + x] = iterations;
+        }
+    }
+}
+
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class KernelAttribute : System.Attribute
+{
+    public KernelBackends Backends { get; set; }
+    public int VectorSize { get; set; }
+    public bool IsParallel { get; set; }
+}
+
+[System.Flags]
+public enum KernelBackends { CPU = 1, CUDA = 2, Metal = 4 }
+
+public static class KernelContext
+{
+    public static Index3 ThreadId => default;
+    public static Index3 BlockId => default;
+    public static Index3 BlockDim => default;
+    public static Index3 GridDim => default;
+}
+
+public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; }
+";
+
+    [Fact]
+    public void Generator_MandelbrotWithWhileLoop_EmitsRealCudaSource()
+    {
+        // Regression for the GH #182 Mandelbrot report: a while-loop body previously produced
+        // CudaSource = null, and an explicit "CUDA" request then failed deep in NVRTC validation.
+        var registry = RunGenerator(MandelbrotKernel).FirstOrDefault(s => s.HintName == "KernelRegistry.g.cs").SourceText?.ToString() ?? string.Empty;
+
+        Assert.DoesNotContain("CudaSource = null", registry);
+        Assert.Contains("__global__ void Mandelbrot(int* output, int width, int height, float minX, float maxX, float minY, float maxY, int maxIterations)", registry);
+        Assert.Contains("while (iterations < maxIterations", registry);
+    }
+
+    [Fact]
+    public void Generator_Mandelbrot_DetectsExtentsFromGuardComparisons()
+    {
+        // width (param 1) bounds x, height (param 2) bounds y — NOT the trailing int scalars
+        // (those are maxIterations and height, which the positional heuristic would pick,
+        // silently computing a wrong region).
+        var registry = RunGenerator(MandelbrotKernel).FirstOrDefault(s => s.HintName == "KernelRegistry.g.cs").SourceText?.ToString() ?? string.Empty;
+
+        Assert.Contains("ExtentParamIndices = new[] { 1, 2 }", registry);
+        // The CPU invoker must use the detected extents for coordinate reconstruction.
+        Assert.Contains("int __xext = (int)args[1];", registry);
+        Assert.Contains("int __yext = (int)args[2];", registry);
+    }
+
     [Fact]
     public void Generator_VectorAddUsingSpanLength_EmitsCudaWithImplicitLengthParameter()
     {

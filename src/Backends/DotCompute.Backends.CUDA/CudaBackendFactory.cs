@@ -84,9 +84,10 @@ namespace DotCompute.Backends.CUDA
                             _logger.LogWarningMessage(
                                 $"An NVIDIA GPU and driver were detected ({driverDeviceCount} device(s), driver supports CUDA {driverCuda}), " +
                                 "but the CUDA Toolkit runtime (cudart64_*.dll / libcudart.so) was not found. " +
-                                "The CUDA backend compiles kernels with NVRTC and requires the CUDA Toolkit 12.0 or newer: " +
-                                "install it from https://developer.nvidia.com/cuda-downloads, or ensure its bin directory is on PATH " +
-                                "(the CUDA_PATH environment variable set by the installer is also probed).");
+                                "Easiest fix: add the NuGet package DotCompute.Backends.CUDA.Natives.CU13.V2 (drivers r580+) " +
+                                "or DotCompute.Backends.CUDA.Natives.CU12.V2 (drivers r525+) — no toolkit install needed. " +
+                                "Alternatively install the CUDA Toolkit 12.0+ from https://developer.nvidia.com/cuda-downloads " +
+                                "or ensure its bin directory is on PATH (the CUDA_PATH environment variable is also probed).");
                         }
                         return false;
                     }
