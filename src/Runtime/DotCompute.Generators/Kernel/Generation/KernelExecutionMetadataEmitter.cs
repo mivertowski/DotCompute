@@ -526,8 +526,20 @@ internal static class KernelExecutionMetadataEmitter
             case CastExpressionSyntax cast:
                 return $"({MapCudaType(NormalizeCSharpType(cast.Type.ToString()))}){TranslateExpressionToCuda(cast.Expression)}";
 
+            // The [Kernel] programming model defines ThreadId as the GLOBAL thread coordinate
+            // (the CPU invoker substitutes ThreadId->global index, BlockId->0, BlockDim->extent).
+            // Mapping ThreadId to the block-local threadIdx made every CUDA block compute the
+            // same tile (GH #182 Mandelbrot: exactly one 16x16 block of correct pixels). The
+            // CUDA mapping mirrors the CPU semantics, so both the bare `ThreadId.X` style and
+            // the explicit `ThreadId.X + BlockId.X * BlockDim.X` style produce the global index.
             case MemberAccessExpressionSyntax memberAccess when TryClassifyIntrinsic(memberAccess, out var intrinsic, out var axis):
-                return $"{intrinsic}.{axis}";
+                return intrinsic switch
+                {
+                    "threadIdx" => $"(blockIdx.{axis} * blockDim.{axis} + threadIdx.{axis})",
+                    "blockIdx" => "0",
+                    "blockDim" => $"(gridDim.{axis} * blockDim.{axis})",
+                    _ => "1", // gridDim
+                };
 
             // A buffer's `.Length` maps to the implicit `__length` kernel parameter (a CUDA pointer
             // carries no length). GenerateCuda adds `__length` to the signature and flags the

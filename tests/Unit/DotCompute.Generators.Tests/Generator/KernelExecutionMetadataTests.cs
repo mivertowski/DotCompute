@@ -104,9 +104,11 @@ public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; 
         // Real CUDA-C, not a placeholder.
         Assert.DoesNotContain("placeholder", registry);
         Assert.Contains("__global__ void TransposeNaive(const float* input, float* output, int rows, int cols)", registry);
-        Assert.Contains("int row = threadIdx.y + blockIdx.y * blockDim.y;", registry);
-        Assert.Contains("int col = threadIdx.x + blockIdx.x * blockDim.x;", registry);
-        Assert.Contains("threadIdx.x", registry);
+        // ThreadId maps to the GLOBAL index, BlockId to 0, BlockDim to the total extent — so the
+        // explicit CUDA-style expression still evaluates to the global coordinate (and bare
+        // ThreadId.X kernels are correct beyond the first block).
+        Assert.Contains("int row = (blockIdx.y * blockDim.y + threadIdx.y) + 0 * (gridDim.y * blockDim.y);", registry);
+        Assert.Contains("int col = (blockIdx.x * blockDim.x + threadIdx.x) + 0 * (gridDim.x * blockDim.x);", registry);
         Assert.Contains("output[col * rows + row] = input[row * cols + col];", registry);
 
         // CUDA entry point = the __global__ function name.
@@ -235,6 +237,7 @@ public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; 
         Assert.DoesNotContain("CudaSource = null", registry);
         Assert.Contains("__global__ void Mandelbrot(int* output, int width, int height, float minX, float maxX, float minY, float maxY, int maxIterations)", registry);
         Assert.Contains("while (iterations < maxIterations", registry);
+        Assert.Contains("int x = (blockIdx.x * blockDim.x + threadIdx.x);", registry);
     }
 
     [Fact]
