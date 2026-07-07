@@ -67,6 +67,7 @@ public sealed class KernelRegistrationEmitter
             var fullName = $"{method.ContainingType}.{method.Name}";
             var dimensions = KernelExecutionMetadataEmitter.DetectDimensions(method);
             var (cudaSource, cudaEntryPoint, cudaNeedsLength) = KernelExecutionMetadataEmitter.GenerateCuda(method);
+            var extentParamIndices = KernelExecutionMetadataEmitter.DetectExtentParamIndices(method, dimensions);
             var invokerClassName = KernelExecutionMetadataEmitter.GetInvokerClassName(method);
 
             _ = source.AppendLine($"            {{ \"{fullName}\", new KernelMetadata");
@@ -83,6 +84,9 @@ public sealed class KernelRegistrationEmitter
             _ = source.AppendLine($"                CudaSource = {FormatCudaSource(cudaSource)},");
             _ = source.AppendLine($"                CudaEntryPoint = {FormatNullableString(cudaEntryPoint)},");
             _ = source.AppendLine($"                CudaNeedsLength = {Bool(cudaNeedsLength)},");
+            _ = source.AppendLine(extentParamIndices.Any(i => i >= 0)
+                ? $"                ExtentParamIndices = new[] {{ {string.Join(", ", extentParamIndices)} }},"
+                : "                ExtentParamIndices = null,");
             _ = source.AppendLine($"                CpuInvoker = (System.Action<object[], int, int>){invokerClassName}.Invoke,");
             _ = source.AppendLine("                Parameters = new KernelParam[]");
             _ = source.AppendLine("                {");
@@ -174,6 +178,7 @@ public sealed class KernelRegistrationEmitter
         _ = source.AppendLine("        public string? CudaSource { get; init; }");
         _ = source.AppendLine("        public string? CudaEntryPoint { get; init; }");
         _ = source.AppendLine("        public bool CudaNeedsLength { get; init; }");
+        _ = source.AppendLine("        public int[]? ExtentParamIndices { get; init; }");
         _ = source.AppendLine("        public System.Delegate? CpuInvoker { get; init; }");
         _ = source.AppendLine("        public KernelParam[] Parameters { get; init; } = Array.Empty<KernelParam>();");
         _ = source.AppendLine("    }");

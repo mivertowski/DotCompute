@@ -585,6 +585,14 @@ public class KernelRegistrationInfo
     public bool CudaNeedsLength { get; init; }
 
     /// <summary>
+    /// Per-dimension parameter indices supplying the launch extents, detected by the generator
+    /// from the kernel's own guard comparisons (e.g. <c>x &gt;= width</c> maps width to the X
+    /// extent). -1 for undetected dimensions; null when nothing was detected. Positional
+    /// heuristics remain the fallback.
+    /// </summary>
+    public int[]? ExtentParamIndices { get; init; }
+
+    /// <summary>
     /// Generator-emitted CPU invoker: <c>void (KernelArguments args, int start, int end)</c>. It
     /// unpacks the kernel arguments into typed spans/scalars and runs the kernel body over the
     /// half-open work range [start, end). Null when the kernel does not target CPU. This is the

@@ -353,7 +353,20 @@ public class KernelExecutionService(
             };
         }
 
-        // Collect the trailing D integer scalar extents (last int → X, previous → Y, then Z).
+        // Preferred: generator-detected extents (from the kernel's own guard comparisons, e.g.
+        // `x >= width` → width is the X extent). The positional fallback below mis-assigns extents
+        // whenever they are not the trailing parameters — e.g. Mandelbrot(output, width, height,
+        // minX..maxY, maxIterations), whose trailing ints are (maxIterations, height) (GH #182).
+        int DetectedExtent(int dim)
+        {
+            var indices = registration.ExtentParamIndices;
+            return indices is not null && dim < indices.Length && indices[dim] >= 0 && indices[dim] < args.Length
+                && args[indices[dim]] is int detected
+                ? detected
+                : -1;
+        }
+
+        // Fallback: the trailing D integer scalar extents (last int → X, previous → Y, then Z).
         var extents = new List<int>(d);
         for (var i = args.Length - 1; i >= 0 && extents.Count < d; i--)
         {
@@ -363,9 +376,12 @@ public class KernelExecutionService(
             }
         }
 
-        var xExt = extents.Count > 0 ? extents[0] : Math.Max(1, totalWork);
-        var yExt = extents.Count > 1 ? extents[1] : 1;
-        var zExt = extents.Count > 2 ? extents[2] : 1;
+        var xDetected = DetectedExtent(0);
+        var yDetected = DetectedExtent(1);
+        var zDetected = DetectedExtent(2);
+        var xExt = xDetected > 0 ? xDetected : extents.Count > 0 ? extents[0] : Math.Max(1, totalWork);
+        var yExt = yDetected > 0 ? yDetected : extents.Count > 1 ? extents[1] : 1;
+        var zExt = zDetected > 0 ? zDetected : extents.Count > 2 ? extents[2] : 1;
 
         var (bx, by, bz) = d == 2 ? (16u, 16u, 1u) : (8u, 8u, 4u);
 
@@ -521,7 +537,7 @@ public class KernelExecutionService(
         }
 
         var availableAccelerators = _runtime.GetAccelerators()
-            .Where(a => registration.SupportedBackends.Contains(MapDeviceTypeToBackend(a.Info.DeviceType)))
+            .Where(a => IsBackendExecutable(registration, MapDeviceTypeToBackend(a.Info.DeviceType)))
             .ToList();
 
         if (availableAccelerators.Count == 0)
@@ -586,7 +602,7 @@ public class KernelExecutionService(
         }
 
         var supportedAccelerators = _runtime.GetAccelerators()
-            .Where(a => registration.SupportedBackends.Contains(MapDeviceTypeToBackend(a.Info.DeviceType)))
+            .Where(a => IsBackendExecutable(registration, MapDeviceTypeToBackend(a.Info.DeviceType)))
             .ToList();
 
         return supportedAccelerators.AsReadOnly();
@@ -611,11 +627,30 @@ public class KernelExecutionService(
         return await Task.FromResult(true);
     }
 
+    /// <summary>
+    /// True when the kernel carries an executable payload for the backend. The [Kernel] attribute
+    /// may declare CUDA/Metal, but a body the translator could not handle yields no device source —
+    /// such a kernel must not be scheduled (or benchmarked!) as GPU work.
+    /// </summary>
+    private static bool IsBackendExecutable(KernelRegistrationInfo registration, string backend)
+        => registration.SupportedBackends.Contains(backend) && backend switch
+        {
+            "CUDA" => !string.IsNullOrEmpty(registration.CudaSource),
+            "Metal" => !string.IsNullOrEmpty(registration.MetalSource),
+            _ => true,
+        };
+
     private static KernelDefinition CreateKernelDefinition(KernelRegistrationInfo registration, string backend = "CPU")
     {
         var (source, language, entry) = backend switch
         {
-            "CUDA" => (registration.CudaSource ?? GetKernelSource(registration), "CUDA", registration.CudaEntryPoint ?? registration.Name),
+            // No generated CUDA source means the [Kernel] translator could not handle the body.
+            // Feeding the C# placeholder to NVRTC produces a baffling "must contain __global__"
+            // validation error (GH #182 Mandelbrot report) — fail with the real reason instead.
+            "CUDA" => (registration.CudaSource ?? throw new InvalidOperationException(
+                $"Kernel '{registration.FullName ?? registration.Name}' has no generated CUDA source: its body uses C# constructs " +
+                "the [Kernel] CUDA translator does not support yet, so it can only run on the CPU backend. " +
+                "If the kernel body looks translatable, please open an issue with its source."), "CUDA", registration.CudaEntryPoint ?? registration.Name),
             "Metal" => (registration.MetalSource ?? GetKernelSource(registration), "Metal", registration.Name),
             _ => (GetKernelSource(registration), "CSharp", registration.Name),
         };

@@ -205,7 +205,8 @@ internal static class KernelExecutionMetadataEmitter
     {
         const string indent = "                ";
 
-        // Indices (into args) of integer scalar parameters, in declaration order.
+        // Indices (into args) of integer scalar parameters, in declaration order — the fallback
+        // source of extents (trailing ints) when guard-based detection finds nothing.
         var intArgs = new List<int>();
         for (var i = 0; i < method.Parameters.Count; i++)
         {
@@ -217,20 +218,24 @@ internal static class KernelExecutionMetadataEmitter
         }
 
         var last = intArgs.Count - 1;
+        var detected = DetectExtentParamIndices(method, Math.Max(dimensions, 1));
 
-        if (dimensions >= 3 && intArgs.Count >= 3)
+        // Extent expression for a dimension: guard-detected parameter first, positional fallback second.
+        string Ext(int dim, string fallback) => detected.Length > dim && detected[dim] >= 0 ? $"(int)args[{detected[dim]}]" : fallback;
+
+        if (dimensions >= 3 && (intArgs.Count >= 3 || detected.Count(i => i >= 0) >= 3))
         {
-            _ = builder.AppendLine($"{indent}int __xext = (int)args[{intArgs[last]}];");
-            _ = builder.AppendLine($"{indent}int __yext = (int)args[{intArgs[last - 1]}];");
-            _ = builder.AppendLine($"{indent}int __zext = (int)args[{intArgs[last - 2]}];");
+            _ = builder.AppendLine($"{indent}int __xext = {Ext(0, $"(int)args[{intArgs[last]}]")};");
+            _ = builder.AppendLine($"{indent}int __yext = {Ext(1, $"(int)args[{intArgs[last - 1]}]")};");
+            _ = builder.AppendLine($"{indent}int __zext = {Ext(2, $"(int)args[{intArgs[last - 2]}]")};");
             _ = builder.AppendLine($"{indent}int __x = __i % __xext;");
             _ = builder.AppendLine($"{indent}int __y = (__i / __xext) % __yext;");
             _ = builder.AppendLine($"{indent}int __z = __i / (__xext * __yext);");
         }
-        else if (dimensions >= 2 && intArgs.Count >= 2)
+        else if (dimensions >= 2 && (intArgs.Count >= 2 || detected.Count(i => i >= 0) >= 2))
         {
-            _ = builder.AppendLine($"{indent}int __xext = (int)args[{intArgs[last]}];");
-            _ = builder.AppendLine($"{indent}int __yext = (int)args[{intArgs[last - 1]}];");
+            _ = builder.AppendLine($"{indent}int __xext = {Ext(0, intArgs.Count >= 1 ? $"(int)args[{intArgs[last]}]" : "(end - start)")};");
+            _ = builder.AppendLine($"{indent}int __yext = {Ext(1, intArgs.Count >= 2 ? $"(int)args[{intArgs[last - 1]}]" : "1")};");
             _ = builder.AppendLine($"{indent}int __zext = 1;");
             _ = builder.AppendLine($"{indent}int __x = __i % __xext;");
             _ = builder.AppendLine($"{indent}int __y = __i / __xext;");
@@ -238,7 +243,7 @@ internal static class KernelExecutionMetadataEmitter
         }
         else
         {
-            var xext = intArgs.Count > 0 ? $"(int)args[{intArgs[last]}]" : "(end - start)";
+            var xext = Ext(0, intArgs.Count > 0 ? $"(int)args[{intArgs[last]}]" : "(end - start)");
             _ = builder.AppendLine($"{indent}int __xext = {xext};");
             _ = builder.AppendLine($"{indent}int __yext = 1;");
             _ = builder.AppendLine($"{indent}int __zext = 1;");
@@ -246,6 +251,111 @@ internal static class KernelExecutionMetadataEmitter
             _ = builder.AppendLine($"{indent}int __y = 0;");
             _ = builder.AppendLine($"{indent}int __z = 0;");
         }
+    }
+
+    /// <summary>
+    /// Detects which integer scalar parameters bound each launch dimension by matching the
+    /// kernel's own guard comparisons: a coordinate derived from <c>KernelContext.ThreadId.X/Y/Z</c>
+    /// compared against an int parameter (e.g. <c>if (x &gt;= width || y &gt;= height) return;</c>
+    /// or <c>if (row &lt; rows &amp;&amp; col &lt; cols)</c>) marks that parameter as the extent for
+    /// the coordinate's dimension. Positional heuristics (trailing ints) mis-assign extents when
+    /// they are not the last parameters — e.g. Mandelbrot(output, width, height, minX.., maxIterations),
+    /// where the trailing ints are (maxIterations, height), silently computing a wrong region (GH #182).
+    /// Returns one parameter index per dimension; -1 where nothing was detected.
+    /// </summary>
+    public static int[] DetectExtentParamIndices(KernelMethodInfo method, int dimensions)
+    {
+        var result = new int[dimensions];
+        for (var i = 0; i < dimensions; i++)
+        {
+            result[i] = -1;
+        }
+
+        var body = GetBody(method);
+        if (body is null)
+        {
+            return result;
+        }
+
+        var intParams = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < method.Parameters.Count; i++)
+        {
+            var param = method.Parameters[i];
+            if (!param.IsBuffer && IsIntegerType(NormalizeCSharpType(param.Type)))
+            {
+                intParams[param.Name] = i;
+            }
+        }
+
+        if (intParams.Count == 0)
+        {
+            return result;
+        }
+
+        // Locals whose initializer involves ThreadId.<axis> are coordinates for that axis.
+        var coordinateLocals = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var local in body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
+        {
+            foreach (var declarator in local.Declaration.Variables)
+            {
+                if (declarator.Initializer is null)
+                {
+                    continue;
+                }
+
+                foreach (var memberAccess in declarator.Initializer.Value.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>())
+                {
+                    if (TryClassifyIntrinsic(memberAccess, out var intrinsic, out var axis) && intrinsic == "threadIdx")
+                    {
+                        coordinateLocals[declarator.Identifier.Text] = axis == "x" ? 0 : axis == "y" ? 1 : 2;
+                        break;
+                    }
+                }
+            }
+        }
+
+        int AxisOf(ExpressionSyntax expression)
+        {
+            if (expression is IdentifierNameSyntax identifier && coordinateLocals.TryGetValue(identifier.Identifier.Text, out var axis))
+            {
+                return axis;
+            }
+
+            if (expression is MemberAccessExpressionSyntax memberAccess
+                && TryClassifyIntrinsic(memberAccess, out var intrinsic, out var axisName) && intrinsic == "threadIdx")
+            {
+                return axisName == "x" ? 0 : axisName == "y" ? 1 : 2;
+            }
+
+            return -1;
+        }
+
+        foreach (var comparison in body.DescendantNodes().OfType<BinaryExpressionSyntax>())
+        {
+            var isRelational = comparison.Kind() is SyntaxKind.LessThanExpression or SyntaxKind.LessThanOrEqualExpression
+                or SyntaxKind.GreaterThanExpression or SyntaxKind.GreaterThanOrEqualExpression;
+            if (!isRelational)
+            {
+                continue;
+            }
+
+            var leftAxis = AxisOf(comparison.Left);
+            if (leftAxis >= 0 && leftAxis < dimensions && result[leftAxis] < 0
+                && comparison.Right is IdentifierNameSyntax rightId && intParams.TryGetValue(rightId.Identifier.Text, out var rightIndex))
+            {
+                result[leftAxis] = rightIndex;
+                continue;
+            }
+
+            var rightAxis = AxisOf(comparison.Right);
+            if (rightAxis >= 0 && rightAxis < dimensions && result[rightAxis] < 0
+                && comparison.Left is IdentifierNameSyntax leftId && intParams.TryGetValue(leftId.Identifier.Text, out var leftIndex))
+            {
+                result[rightAxis] = leftIndex;
+            }
+        }
+
+        return result;
     }
 
     // -------------------------------------------------------------------------------------
@@ -329,6 +439,47 @@ internal static class KernelExecutionMetadataEmitter
                 _ = builder.Append(indent).Append("return;").Append('\n');
                 break;
 
+            case WhileStatementSyntax whileStatement:
+                _ = builder.Append(indent).Append("while (").Append(TranslateExpressionToCuda(whileStatement.Condition)).Append(')').Append('\n');
+                EmitBranch(whileStatement.Statement, builder, indentLevel);
+                break;
+
+            case DoStatementSyntax doStatement:
+                _ = builder.Append(indent).Append("do").Append('\n');
+                EmitBranch(doStatement.Statement, builder, indentLevel);
+                _ = builder.Append(indent).Append("while (").Append(TranslateExpressionToCuda(doStatement.Condition)).Append(");").Append('\n');
+                break;
+
+            case ForStatementSyntax forStatement:
+                {
+                    string initializer;
+                    if (forStatement.Declaration is not null)
+                    {
+                        var cudaType = MapCudaType(NormalizeCSharpType(forStatement.Declaration.Type.ToString()));
+                        initializer = cudaType + " " + string.Join(", ", forStatement.Declaration.Variables.Select(v =>
+                            v.Initializer is null ? v.Identifier.Text : $"{v.Identifier.Text} = {TranslateExpressionToCuda(v.Initializer.Value)}"));
+                    }
+                    else
+                    {
+                        initializer = string.Join(", ", forStatement.Initializers.Select(TranslateExpressionToCuda));
+                    }
+
+                    var condition = forStatement.Condition is null ? string.Empty : TranslateExpressionToCuda(forStatement.Condition);
+                    var incrementors = string.Join(", ", forStatement.Incrementors.Select(TranslateExpressionToCuda));
+
+                    _ = builder.Append(indent).Append("for (").Append(initializer).Append("; ").Append(condition).Append("; ").Append(incrementors).Append(')').Append('\n');
+                    EmitBranch(forStatement.Statement, builder, indentLevel);
+                    break;
+                }
+
+            case BreakStatementSyntax:
+                _ = builder.Append(indent).Append("break;").Append('\n');
+                break;
+
+            case ContinueStatementSyntax:
+                _ = builder.Append(indent).Append("continue;").Append('\n');
+                break;
+
             default:
                 throw new NotSupportedException($"Unsupported statement kind: {statement.Kind()}");
         }
@@ -375,8 +526,20 @@ internal static class KernelExecutionMetadataEmitter
             case CastExpressionSyntax cast:
                 return $"({MapCudaType(NormalizeCSharpType(cast.Type.ToString()))}){TranslateExpressionToCuda(cast.Expression)}";
 
+            // The [Kernel] programming model defines ThreadId as the GLOBAL thread coordinate
+            // (the CPU invoker substitutes ThreadId->global index, BlockId->0, BlockDim->extent).
+            // Mapping ThreadId to the block-local threadIdx made every CUDA block compute the
+            // same tile (GH #182 Mandelbrot: exactly one 16x16 block of correct pixels). The
+            // CUDA mapping mirrors the CPU semantics, so both the bare `ThreadId.X` style and
+            // the explicit `ThreadId.X + BlockId.X * BlockDim.X` style produce the global index.
             case MemberAccessExpressionSyntax memberAccess when TryClassifyIntrinsic(memberAccess, out var intrinsic, out var axis):
-                return $"{intrinsic}.{axis}";
+                return intrinsic switch
+                {
+                    "threadIdx" => $"(blockIdx.{axis} * blockDim.{axis} + threadIdx.{axis})",
+                    "blockIdx" => "0",
+                    "blockDim" => $"(gridDim.{axis} * blockDim.{axis})",
+                    _ => "1", // gridDim
+                };
 
             // A buffer's `.Length` maps to the implicit `__length` kernel parameter (a CUDA pointer
             // carries no length). GenerateCuda adds `__length` to the signature and flags the
