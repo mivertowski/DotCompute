@@ -62,7 +62,7 @@ internal static class KernelExecutionMetadataEmitter
     /// Generates the <c>extern "C" __global__</c> CUDA-C source for the kernel, or
     /// <c>(null, null)</c> if the body uses constructs outside the supported subset.
     /// </summary>
-    public static (string? Source, string? EntryPoint, bool NeedsLength) GenerateCuda(KernelMethodInfo method)
+    public static (string? Source, string? EntryPoint, bool NeedsLength) GenerateCuda(KernelMethodInfo method, Compilation? compilation = null)
     {
         var body = GetBody(method);
         if (body is null)
@@ -72,6 +72,16 @@ internal static class KernelExecutionMetadataEmitter
 
         try
         {
+            // Resolve any custom struct types the kernel uses (buffer element types, locals, ...)
+            // into CUDA struct definitions. Returns false when a referenced non-primitive type
+            // cannot be represented as a blittable CUDA struct — the kernel then has no CUDA source
+            // (CPU still works). This gate also guarantees every type name that later reaches
+            // MapCudaType is either a mapped primitive or an emitted struct.
+            if (!TryBuildCudaStructDefinitions(method, compilation, out var structDefinitions))
+            {
+                return (null, null, false);
+            }
+
             // A CUDA pointer has no `.Length`. If the body uses a buffer's `.Length` (the common
             // elementwise `if (i < c.Length)` bound), emit an implicit trailing `__length` kernel
             // parameter; each `.Length` translates to `__length`, and the runtime supplies the work
@@ -85,6 +95,10 @@ internal static class KernelExecutionMetadataEmitter
             }
 
             var builder = new StringBuilder();
+            if (!string.IsNullOrEmpty(structDefinitions))
+            {
+                _ = builder.Append(structDefinitions);
+            }
             _ = builder.Append("extern \"C\" __global__ void ").Append(method.Name).Append('(').Append(signature).Append(") {").Append('\n');
             foreach (var statement in body.Statements)
             {
@@ -547,9 +561,67 @@ internal static class KernelExecutionMetadataEmitter
             case MemberAccessExpressionSyntax lengthAccess when lengthAccess.Name.Identifier.Text == "Length" && lengthAccess.Expression is IdentifierNameSyntax:
                 return "__length";
 
+            // Struct field access (p.X, particle.Mass, ...) — maps 1:1 to CUDA member access since
+            // the emitted CUDA struct mirrors the C# struct field names.
+            case MemberAccessExpressionSyntax structAccess:
+                return $"{TranslateExpressionToCuda(structAccess.Expression)}.{structAccess.Name.Identifier.Text}";
+
+            // Method calls — only the CUDA math library is translatable (MathF.*/Math.*).
+            case InvocationExpressionSyntax invocation:
+                return TranslateInvocationToCuda(invocation);
+
             default:
                 throw new NotSupportedException($"Unsupported expression kind: {expression.Kind()}");
         }
+    }
+
+    /// <summary>
+    /// Translates a <c>MathF.*</c> / <c>Math.*</c> call to the matching CUDA math function.
+    /// <c>MathF.Sqrt</c> uses the single-precision variant (<c>sqrtf</c>); <c>Math.Sqrt</c> the
+    /// double-precision one (<c>sqrt</c>). Any other call is unsupported (falls back to no CUDA).
+    /// </summary>
+    private static string TranslateInvocationToCuda(InvocationExpressionSyntax invocation)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax target
+            || target.Expression is not IdentifierNameSyntax receiver
+            || receiver.Identifier.Text is not ("Math" or "MathF"))
+        {
+            throw new NotSupportedException($"Unsupported method call: {invocation.Expression}");
+        }
+
+        var isFloat = receiver.Identifier.Text == "MathF";
+        var func = target.Name.Identifier.Text switch
+        {
+            "Sqrt" => isFloat ? "sqrtf" : "sqrt",
+            "Abs" => isFloat ? "fabsf" : "fabs",
+            "Min" => isFloat ? "fminf" : "fmin",
+            "Max" => isFloat ? "fmaxf" : "fmax",
+            "Pow" => isFloat ? "powf" : "pow",
+            "Exp" => isFloat ? "expf" : "exp",
+            "Log" => isFloat ? "logf" : "log",
+            "Log2" => isFloat ? "log2f" : "log2",
+            "Log10" => isFloat ? "log10f" : "log10",
+            "Sin" => isFloat ? "sinf" : "sin",
+            "Cos" => isFloat ? "cosf" : "cos",
+            "Tan" => isFloat ? "tanf" : "tan",
+            "Asin" => isFloat ? "asinf" : "asin",
+            "Acos" => isFloat ? "acosf" : "acos",
+            "Atan" => isFloat ? "atanf" : "atan",
+            "Atan2" => isFloat ? "atan2f" : "atan2",
+            "Sinh" => isFloat ? "sinhf" : "sinh",
+            "Cosh" => isFloat ? "coshf" : "cosh",
+            "Tanh" => isFloat ? "tanhf" : "tanh",
+            "Floor" => isFloat ? "floorf" : "floor",
+            "Ceiling" => isFloat ? "ceilf" : "ceil",
+            "Round" => isFloat ? "roundf" : "round",
+            "Truncate" => isFloat ? "truncf" : "trunc",
+            "FusedMultiplyAdd" => isFloat ? "fmaf" : "fma",
+            "CopySign" => isFloat ? "copysignf" : "copysign",
+            _ => throw new NotSupportedException($"Unsupported {receiver.Identifier.Text} function: {target.Name.Identifier.Text}")
+        };
+
+        var arguments = invocation.ArgumentList.Arguments.Select(a => TranslateExpressionToCuda(a.Expression));
+        return $"{func}({string.Join(", ", arguments)})";
     }
 
     // -------------------------------------------------------------------------------------
@@ -643,6 +715,193 @@ internal static class KernelExecutionMetadataEmitter
     }
 
     // -------------------------------------------------------------------------------------
+    // Custom struct support (CUDA)
+    // -------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Emits CUDA <c>struct</c> definitions for every user-defined struct the kernel references
+    /// (buffer element types, locals, scalars, casts), in dependency order. Returns false — so the
+    /// kernel gets no CUDA source — if any referenced non-primitive type cannot be represented as a
+    /// blittable struct of primitive/struct fields (e.g. a reference type, a BCL struct whose layout
+    /// we must not assume, or a struct with an unsupported field). A user struct's default sequential
+    /// layout of primitive fields matches the emitted CUDA struct's layout, which is what makes the
+    /// raw byte copy at runtime valid.
+    /// </summary>
+    private static bool TryBuildCudaStructDefinitions(KernelMethodInfo method, Compilation? compilation, out string definitions)
+    {
+        definitions = string.Empty;
+        var decl = method.MethodDeclaration;
+        var body = decl?.Body;
+        if (decl is null || body is null)
+        {
+            return true;
+        }
+
+        if (compilation is null)
+        {
+            // No semantic model: only safe when every referenced type is a mapped primitive.
+            return !ReferencesCustomType(method);
+        }
+
+        SemanticModel model;
+        try
+        {
+            model = compilation.GetSemanticModel(decl.SyntaxTree);
+        }
+#pragma warning disable CA1031
+        catch
+#pragma warning restore CA1031
+        {
+            return false;
+        }
+
+        var ordered = new List<INamedTypeSymbol>();
+        var resolved = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+        bool Collect(ITypeSymbol? type)
+        {
+            type = UnwrapBufferElement(type);
+            if (type is null)
+            {
+                return false;
+            }
+
+            if (TryGetPrimitiveCudaType(type, out _))
+            {
+                return true;
+            }
+
+            if (type is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct
+                || named.IsGenericType
+                || named.DeclaringSyntaxReferences.IsDefaultOrEmpty
+                || !SymbolEqualityComparer.Default.Equals(named.ContainingAssembly, compilation.Assembly))
+            {
+                return false; // reference type, generic, or a BCL/foreign struct — don't guess its layout
+            }
+
+            if (resolved.Contains(named))
+            {
+                return true;
+            }
+
+            if (!visiting.Add(named))
+            {
+                return false; // recursive struct
+            }
+
+            var fields = named.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic && !f.IsConst).ToList();
+            if (fields.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var field in fields)
+            {
+                if (!Collect(field.Type))
+                {
+                    return false;
+                }
+            }
+
+            _ = visiting.Remove(named);
+            _ = resolved.Add(named);
+            ordered.Add(named);
+            return true;
+        }
+
+        foreach (var parameter in decl.ParameterList.Parameters)
+        {
+            if (!Collect(model.GetDeclaredSymbol(parameter)?.Type))
+            {
+                return false;
+            }
+        }
+
+        foreach (var node in body.DescendantNodes())
+        {
+            var typeSyntax = node switch
+            {
+                VariableDeclarationSyntax variable => variable.Type,
+                CastExpressionSyntax cast => cast.Type,
+                _ => null
+            };
+
+            if (typeSyntax is not null && !typeSyntax.IsVar && !Collect(model.GetTypeInfo(typeSyntax).Type))
+            {
+                return false;
+            }
+        }
+
+        if (ordered.Count == 0)
+        {
+            return true;
+        }
+
+        var sb = new StringBuilder();
+        foreach (var structSymbol in ordered)
+        {
+            _ = sb.Append("struct ").Append(structSymbol.Name).Append(" {").Append('\n');
+            foreach (var field in structSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic && !f.IsConst))
+            {
+                _ = sb.Append("    ").Append(CudaFieldType(field.Type)).Append(' ').Append(field.Name).Append(';').Append('\n');
+            }
+            _ = sb.Append("};").Append('\n').Append('\n');
+        }
+
+        definitions = sb.ToString();
+        return true;
+    }
+
+    /// <summary>Element type of a Span&lt;T&gt;/ReadOnlySpan&lt;T&gt;/T[] buffer, or the type itself.</summary>
+    private static ITypeSymbol? UnwrapBufferElement(ITypeSymbol? type)
+    {
+        if (type is IArrayTypeSymbol array)
+        {
+            return array.ElementType;
+        }
+
+        if (type is INamedTypeSymbol { IsGenericType: true } named
+            && named.Name is "Span" or "ReadOnlySpan"
+            && named.TypeArguments.Length == 1)
+        {
+            return named.TypeArguments[0];
+        }
+
+        return type;
+    }
+
+    private static bool TryGetPrimitiveCudaType(ITypeSymbol type, out string cudaType)
+    {
+        cudaType = type.SpecialType switch
+        {
+            SpecialType.System_Single => "float",
+            SpecialType.System_Double => "double",
+            SpecialType.System_Int32 => "int",
+            SpecialType.System_UInt32 => "unsigned int",
+            SpecialType.System_Int64 => "long long",
+            SpecialType.System_UInt64 => "unsigned long long",
+            SpecialType.System_Int16 => "short",
+            SpecialType.System_UInt16 => "unsigned short",
+            SpecialType.System_Byte => "unsigned char",
+            SpecialType.System_SByte => "signed char",
+            SpecialType.System_Boolean => "bool",
+            _ => string.Empty
+        };
+        return cudaType.Length > 0;
+    }
+
+    private static string CudaFieldType(ITypeSymbol type)
+        => TryGetPrimitiveCudaType(type, out var cuda) ? cuda : type.Name;
+
+    private static bool ReferencesCustomType(KernelMethodInfo method)
+        => method.Parameters.Any(p => !IsMappablePrimitiveName(p.IsBuffer ? GetElementCSharpType(p.Type) : NormalizeCSharpType(p.Type)));
+
+    private static bool IsMappablePrimitiveName(string csType)
+        => csType is "float" or "double" or "int" or "uint" or "long" or "ulong"
+            or "short" or "ushort" or "byte" or "sbyte" or "bool";
+
+    // -------------------------------------------------------------------------------------
     // Type helpers
     // -------------------------------------------------------------------------------------
 
@@ -706,8 +965,31 @@ internal static class KernelExecutionMetadataEmitter
             "byte" => "unsigned char",
             "sbyte" => "signed char",
             "bool" => "bool",
-            _ => throw new NotSupportedException($"Unsupported CUDA scalar type: {csType}")
+            // A non-primitive reaching this point has already been validated by
+            // TryBuildCudaStructDefinitions as an emitted user struct — map it to that struct's
+            // simple, sanitized name (matching `structSymbol.Name` in the emitted definition).
+            _ => SanitizeStructTypeName(csType)
         };
+    }
+
+    /// <summary>Reduces a (possibly namespace-qualified, possibly generic) type name to the simple,
+    /// sanitized identifier used for the emitted CUDA struct (e.g. <c>A.B.GpuParticle</c> → <c>GpuParticle</c>).</summary>
+    private static string SanitizeStructTypeName(string csType)
+    {
+        var name = csType;
+        var generic = name.IndexOf('<');
+        if (generic >= 0)
+        {
+            name = name.Substring(0, generic);
+        }
+
+        var lastDot = name.LastIndexOf('.');
+        if (lastDot >= 0)
+        {
+            name = name.Substring(lastDot + 1);
+        }
+
+        return SanitizeIdentifier(name.Trim());
     }
 
     private static string SanitizeIdentifier(string value)

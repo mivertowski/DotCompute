@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Abstractions.Interfaces;
 using DotCompute.Abstractions.Kernels;
@@ -482,7 +483,9 @@ public class KernelExecutionService(
                 await by.CopyToAsync(y.AsMemory()).ConfigureAwait(false);
                 break;
             default:
-                // Unsupported element type for copy-back; result remains on the device.
+                // Arbitrary blittable struct[] (e.g. GpuParticle[]) — dispatch generically so
+                // struct-kernel outputs surface back on the host (GH #182 N-body).
+                _ = await CopyUnmanagedBufferToHostReflectivelyAsync(buffer, host, elementType).ConfigureAwait(false);
                 break;
         }
     }
@@ -768,7 +771,10 @@ public class KernelExecutionService(
                 ulong[] ulongArray => await CreateUnifiedBufferAsync(ulongArray, memoryManager),
                 short[] shortArray => await CreateUnifiedBufferAsync(shortArray, memoryManager),
                 ushort[] ushortArray => await CreateUnifiedBufferAsync(ushortArray, memoryManager),
-                _ => throw new NotSupportedException($"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not supported for automatic UnifiedBuffer conversion. Supported element types: float, double, int, uint, long, ulong, short, ushort, byte. For other unmanaged types, allocate the buffer explicitly via memoryManager.AllocateAsync<T>(count) and copy your array in.")
+                // Any other blittable (unmanaged) element type — e.g. a user struct like GpuParticle
+                // in an N-body kernel — is dispatched generically to CreateUnifiedBufferAsync<T>.
+                _ => await CreateUnmanagedBufferReflectivelyAsync(array, memoryManager).ConfigureAwait(false)
+                     ?? throw new NotSupportedException($"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not a blittable (unmanaged) type and cannot be marshalled to the device. Structs used in kernels must contain only unmanaged fields.")
             };
         }
         catch (Exception ex)
@@ -785,6 +791,72 @@ public class KernelExecutionService(
                 _ => throw new NotSupportedException($"Array element type {array.GetType().GetElementType()?.Name ?? array.GetType().Name} is not supported for automatic UnifiedBuffer conversion. Supported element types: float, double, int, uint, long, ulong, short, ushort, byte. For other unmanaged types, allocate the buffer explicitly via memoryManager.AllocateAsync<T>(count) and copy your array in.")
             };
         }
+    }
+
+    /// <summary>
+    /// Marshals an array of an arbitrary blittable (unmanaged) element type — e.g. a user-defined
+    /// struct — to a device buffer by dispatching to the generic <see cref="CreateUnifiedBufferAsync{T}"/>
+    /// via reflection. Returns null when the element type is not unmanaged (contains references).
+    /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2076",
+        Justification = "The generic type argument is the element type of a live array instance; its metadata is present at runtime. Kernel struct marshalling runs under JIT, not trimmed/AOT (where kernels are precompiled).")]
+    private async Task<IUnifiedMemoryBuffer?> CreateUnmanagedBufferReflectivelyAsync(Array array, IUnifiedMemoryManager memoryManager)
+    {
+        var elementType = array.GetType().GetElementType();
+        if (elementType is null || !elementType.IsValueType)
+        {
+            return null;
+        }
+
+        System.Reflection.MethodInfo generic;
+        try
+        {
+            generic = typeof(KernelExecutionService)
+                .GetMethod(nameof(CreateUnifiedBufferAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .MakeGenericMethod(elementType);
+        }
+        catch (ArgumentException)
+        {
+            return null; // element type does not satisfy the `unmanaged` constraint
+        }
+
+        return await (Task<IUnifiedMemoryBuffer>)generic.Invoke(this, [array, memoryManager])!;
+    }
+
+    /// <summary>Copies a device buffer of an arbitrary unmanaged element type back into its host array.</summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2071",
+        Justification = "The generic type argument is the element type of a live array instance; its metadata is present at runtime. Kernel struct marshalling runs under JIT, not trimmed/AOT (where kernels are precompiled).")]
+    private static async Task<bool> CopyUnmanagedBufferToHostReflectivelyAsync(IUnifiedMemoryBuffer buffer, Array host, Type elementType)
+    {
+        if (!elementType.IsValueType)
+        {
+            return false;
+        }
+
+        System.Reflection.MethodInfo generic;
+        try
+        {
+            generic = typeof(KernelExecutionService)
+                .GetMethod(nameof(CopyTypedBufferToHostAsync), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                .MakeGenericMethod(elementType);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+
+        return await (Task<bool>)generic.Invoke(null, [buffer, host])!;
+    }
+
+    private static async Task<bool> CopyTypedBufferToHostAsync<T>(IUnifiedMemoryBuffer buffer, Array host) where T : unmanaged
+    {
+        if (buffer is IUnifiedMemoryBuffer<T> typed && host is T[] array)
+        {
+            await typed.CopyToAsync(array.AsMemory()).ConfigureAwait(false);
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<IUnifiedMemoryBuffer> CreateUnifiedBufferAsync<T>(T[] array, IUnifiedMemoryManager memoryManager) where T : unmanaged
