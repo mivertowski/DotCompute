@@ -227,6 +227,97 @@ public static class KernelContext
 public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; }
 ";
 
+    // The GH #182 reporter's N-body kernel: a custom blittable struct (GpuParticle) buffer,
+    // struct field access, a for loop, and MathF.Sqrt.
+    private const string NBodyKernel = @"
+using System;
+namespace TestApp
+{
+    public struct GpuParticle
+    {
+        public float X;
+        public float Y;
+        public float Z;
+        public float Vx;
+        public float Vy;
+        public float Vz;
+        public float Mass;
+    }
+
+    public static class NBody
+    {
+        [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA, VectorSize = 8, IsParallel = true)]
+        public static void Shader(ReadOnlySpan<GpuParticle> src, Span<GpuParticle> dst, int numParticles, float dt, float g)
+        {
+            int i = KernelContext.ThreadId.X;
+            if (i >= numParticles) return;
+
+            GpuParticle pI = src[i];
+            float fx = 0, fy = 0, fz = 0;
+
+            for (int j = 0; j < numParticles; j++)
+            {
+                if (i == j) continue;
+                GpuParticle pJ = dst[j];
+                float dx = pJ.X - pI.X;
+                float dy = pJ.Y - pI.Y;
+                float dz = pJ.Z - pI.Z;
+                float distanceSq = dx * dx + dy * dy + dz * dz + 1e-6f;
+                float distance = MathF.Sqrt(distanceSq);
+                float force = (g * pJ.Mass) / distanceSq;
+                fx += force * (dx / distance);
+                fy += force * (dy / distance);
+                fz += force * (dz / distance);
+            }
+
+            pI.Vx += fx * dt;
+            pI.X += pI.Vx * dt;
+            dst[i] = pI;
+        }
+    }
+}
+
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class KernelAttribute : System.Attribute
+{
+    public KernelBackends Backends { get; set; }
+    public int VectorSize { get; set; }
+    public bool IsParallel { get; set; }
+}
+
+[System.Flags]
+public enum KernelBackends { CPU = 1, CUDA = 2, Metal = 4 }
+
+public static class KernelContext
+{
+    public static Index3 ThreadId => default;
+    public static Index3 BlockId => default;
+    public static Index3 BlockDim => default;
+    public static Index3 GridDim => default;
+}
+
+public struct Index3 { public int X => 0; public int Y => 0; public int Z => 0; }
+";
+
+    [Fact]
+    public void Generator_NBodyWithCustomStruct_EmitsCudaStructAndBody()
+    {
+        // Regression for the GH #182 N-body report: a custom struct buffer + struct field access +
+        // MathF.Sqrt previously produced CudaSource = null.
+        var registry = RunGenerator(NBodyKernel).FirstOrDefault(s => s.HintName == "KernelRegistry.g.cs").SourceText?.ToString() ?? string.Empty;
+
+        Assert.DoesNotContain("CudaSource = null", registry);
+        // Emitted CUDA struct mirroring the C# struct (blittable float fields).
+        Assert.Contains("struct GpuParticle {", registry);
+        Assert.Contains("float Mass;", registry);
+        // Buffer params become GpuParticle pointers.
+        Assert.Contains("__global__ void Shader(const GpuParticle* src, GpuParticle* dst, int numParticles, float dt, float g)", registry);
+        // Struct locals, field access, and MathF.Sqrt -> sqrtf.
+        Assert.Contains("GpuParticle pI = src[i];", registry);
+        Assert.Contains("float dx = pJ.X - pI.X;", registry);
+        Assert.Contains("sqrtf(distanceSq)", registry);
+    }
+
     [Fact]
     public void Generator_MandelbrotWithWhileLoop_EmitsRealCudaSource()
     {

@@ -76,7 +76,7 @@ public sealed class KernelCodeBuilder
         // Generate the kernel registry. This is the single artifact the runtime consumes: it
         // carries the real CUDA-C source, the CPU invoker delegate, dimensionality and parameter
         // metadata for every kernel (see KernelRegistrationEmitter / KernelExecutionMetadataEmitter).
-        GenerateKernelRegistry(methodList, classList, context);
+        GenerateKernelRegistry(methodList, classList, context, compilation);
 
         // NOTE: the old per-kernel placeholder artifacts (GenerateKernelImplementations ->
         // *_CPU/_CUDA/_Unified .g.cs, GenerateUnifiedWrapper, GenerateKernelInvoker) are no longer
@@ -157,12 +157,14 @@ public sealed class KernelCodeBuilder
     /// <param name="kernelMethods">The kernel methods to include in the registry.</param>
     /// <param name="kernelClasses">The kernel classes to include in the registry.</param>
     /// <param name="context">The source production context.</param>
+    /// <param name="compilation">The compilation, used to resolve custom struct types for CUDA generation.</param>
     private static void GenerateKernelRegistry(
         List<KernelMethodInfo> kernelMethods,
         List<KernelClassInfo> kernelClasses,
-        SourceProductionContext context)
+        SourceProductionContext context,
+        Compilation compilation)
     {
-        var registrySource = KernelRegistrationEmitter.GenerateKernelRegistry(kernelMethods, kernelClasses);
+        var registrySource = KernelRegistrationEmitter.GenerateKernelRegistry(kernelMethods, kernelClasses, compilation);
         context.AddSource("KernelRegistry.g.cs", SourceText.From(registrySource, Encoding.UTF8));
 
         // Note: KernelMetadata class is generated inside KernelRegistry.g.cs
