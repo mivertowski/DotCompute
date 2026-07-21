@@ -450,7 +450,12 @@ namespace DotCompute.Algorithms.LinearAlgebra.Operations
             }
         }
 
-        private static (Matrix U, Matrix S, Matrix VT) ComputeJacobiSVD(Matrix matrix)
+        /// <summary>
+        /// Numerically stable one-sided Jacobi SVD (CPU). Exposed to the LinearAlgebra components so
+        /// every SVD entry point shares this one correct implementation — the previous "simplified
+        /// A^T*A" fallbacks returned unsorted, badly wrong factorizations (GH #182).
+        /// </summary>
+        internal static (Matrix U, Matrix S, Matrix VT) ComputeJacobiSVD(Matrix matrix)
         {
             var m = matrix.Rows;
             var n = matrix.Columns;

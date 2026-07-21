@@ -17,7 +17,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
     /// </summary>
     public sealed class GpuMatrixOperations : IDisposable
     {
-        private readonly IKernelManager _kernelManager;
+        // Optional: GPU kernel execution requires an IKernelManager. No implementation ships yet,
+        // so this is null in practice and the GPU kernel paths below surface a clear error that
+        // GPULinearAlgebraProvider catches to fall back to the CPU implementations (GH #182).
+        private readonly IKernelManager? _kernelManager;
         private readonly Dictionary<string, ManagedCompiledKernel> _kernelCache = [];
         private bool _disposed;
 
@@ -26,10 +29,20 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// </summary>
         /// <param name="kernelManager">The kernel manager for compilation and execution.</param>
         /// <exception cref="ArgumentNullException">Thrown when kernelManager is null.</exception>
-        public GpuMatrixOperations(IKernelManager kernelManager)
+        public GpuMatrixOperations(IKernelManager? kernelManager = null)
         {
-            _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
+            _kernelManager = kernelManager;
         }
+
+        /// <summary>
+        /// Returns the kernel manager, or throws a descriptive error when none is available.
+        /// Callers in <see cref="GPULinearAlgebraProvider"/> catch this and fall back to CPU.
+        /// </summary>
+        private IKernelManager RequireKernelManager()
+            => _kernelManager ?? throw new InvalidOperationException(
+                "GPU kernel execution requires an IKernelManager, and no implementation is currently registered. " +
+                "The CPU implementations (SVD, QR, Cholesky, solvers) work without one — see " +
+                "src/Extensions/DotCompute.Algorithms/README_LinearAlgebraKernels.md.");
 
         /// <summary>
         /// Gets the kernel source for matrix multiply operation.
@@ -107,7 +120,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
                 var kernel = await GetOrCompileKernelAsync("MatrixMultiply", kernelSource, accelerator, cancellationToken).ConfigureAwait(false);
 
                 // Execute the kernel through kernel manager
-                var executionResult = await _kernelManager.ExecuteKernelAsync(
+                var executionResult = await RequireKernelManager().ExecuteKernelAsync(
                     kernel,
                     arguments,
                     accelerator,
@@ -217,99 +230,11 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Method will use _kernelManager for GPU acceleration in v0.2.1")]
         public async Task<(Matrix U, Matrix S, Matrix VT)> SVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken = default)
         {
-            // GPU-accelerated Jacobi SVD is deferred; this method uses a CPU fallback built
-            // on the local QR decomposition so the public API works across backends. Consumers
-            // who need peak GPU SVD performance should integrate cuBLAS directly.
-            //
-            // CPU fallback implementation using simplified SVD approach
-            await Task.Yield(); // Ensure async behavior
-
-            var m = matrix.Rows;
-            var n = matrix.Columns;
-
-            // Compute A^T * A for eigenvalue problem
-            var AtA = new Matrix(n, n);
-            for (var i = 0; i < n; i++)
-            {
-                for (var j = 0; j < n; j++)
-                {
-                    AtA[i, j] = 0;
-                    for (var k = 0; k < m; k++)
-                    {
-                        AtA[i, j] += matrix[k, i] * matrix[k, j];
-                    }
-                }
-            }
-
-            // Simplified eigenvalue computation (power iteration for largest eigenvalue)
-            // This is a basic implementation - production would use QR iteration or Jacobi
-            var singularValues = new float[Math.Min(m, n)];
-            var V = new Matrix(n, n);
-
-            // Initialize V as identity
-            for (var i = 0; i < n; i++)
-            {
-                V[i, i] = 1.0f;
-            }
-
-            // Extract first singular value (simplified)
-            if (n > 0 && m > 0)
-            {
-                // Power iteration for dominant singular value
-                var v = new float[n];
-                for (var i = 0; i < n; i++)
-                {
-                    v[i] = 1.0f / (float)Math.Sqrt(n);
-                }
-
-                for (var iter = 0; iter < 10; iter++)
-                {
-                    var Av = new float[n];
-                    for (var i = 0; i < n; i++)
-                    {
-                        Av[i] = 0;
-                        for (var j = 0; j < n; j++)
-                        {
-                            Av[i] += AtA[i, j] * v[j];
-                        }
-                    }
-
-                    var norm = 0.0f;
-                    for (var i = 0; i < n; i++)
-                    {
-                        norm += Av[i] * Av[i];
-                    }
-                    norm = (float)Math.Sqrt(norm);
-
-                    if (norm > 1e-10f)
-                    {
-                        for (var i = 0; i < n; i++)
-                        {
-                            v[i] = Av[i] / norm;
-                        }
-                    }
-                }
-
-                singularValues[0] = (float)Math.Sqrt(Math.Max(0, singularValues[0]));
-            }
-
-            // Create S matrix (diagonal with singular values)
-            var S = new Matrix(m, n);
-            for (var i = 0; i < Math.Min(m, n); i++)
-            {
-                S[i, i] = singularValues[i];
-            }
-
-            // Compute U = A * V * S^-1 (simplified)
-            var U = new Matrix(m, m);
-            for (var i = 0; i < m; i++)
-            {
-                U[i, i] = 1.0f;
-            }
-
-            var VT = TransposeMatrix(V);
-
-            return (U, S, VT);
+            // GPU-accelerated Jacobi SVD is deferred; use the shared, numerically stable CPU Jacobi
+            // implementation. The former inline "simplified A^T*A" approach returned unsorted
+            // singular values and a factorization that did not reconstruct the input (GH #182).
+            ArgumentNullException.ThrowIfNull(matrix);
+            return await Task.Run(() => Operations.MatrixDecomposition.ComputeJacobiSVD(matrix), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -347,7 +272,7 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
 
             // Compile kernel through kernel manager
             // For matrix operations, we use float types for inputs and outputs
-            var kernel = await _kernelManager.GetOrCompileOperationKernelAsync(
+            var kernel = await RequireKernelManager().GetOrCompileOperationKernelAsync(
                 kernelName,
                 [typeof(float), typeof(float), typeof(float), typeof(int), typeof(int), typeof(int)],
                 typeof(float),

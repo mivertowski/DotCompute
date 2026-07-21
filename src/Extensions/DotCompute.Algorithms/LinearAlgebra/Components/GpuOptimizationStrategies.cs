@@ -348,28 +348,10 @@ namespace DotCompute.Algorithms.LinearAlgebra.Components
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>U, S, and VT matrices.</returns>
         public static async Task<(Matrix U, Matrix S, Matrix VT)> FallbackSVDAsync(Matrix matrix, CancellationToken cancellationToken)
-        {
-            return await Task.Run(() =>
-            {
-                // Simplified SVD using eigendecomposition of A^T * A
-                // This is not numerically stable but serves as a fallback
-                var m = matrix.Rows;
-                var n = matrix.Columns;
-
-                var u = Matrix.Identity(m);
-                var s = Matrix.Identity(Math.Min(m, n));
-                var vt = Matrix.Identity(n);
-
-                // For small matrices, use simple diagonal extraction
-                var minDim = Math.Min(m, n);
-                for (var i = 0; i < minDim; i++)
-                {
-                    s[i, i] = Math.Abs(matrix[i, i]);
-                }
-
-                return (u, s, vt);
-            }, cancellationToken).ConfigureAwait(false);
-        }
+            // Delegates to the shared, numerically stable Jacobi SVD. The former inline
+            // "simplified eigendecomposition of A^T*A" produced unsorted singular values and did
+            // not reconstruct the input at all (GH #182).
+            => await Task.Run(() => Operations.MatrixDecomposition.ComputeJacobiSVD(matrix), cancellationToken).ConfigureAwait(false);
 
         /// <summary>
         /// Provides fallback CPU implementation for linear system solving.

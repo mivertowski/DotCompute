@@ -6,9 +6,9 @@ This document describes the comprehensive GPU kernel implementation for DotCompu
 
 ### Core Files Created
 
-1. **LinearAlgebraKernels.cs** - Main kernel library with core linear algebra operations
-2. **AdvancedLinearAlgebraKernels.cs** - Specialized kernels for advanced operations  
-3. **GPULinearAlgebraProvider.cs** - High-level API for GPU linear algebra operations
+1. **LinearAlgebraKernels.cs** - kernel source library; the type is `LinearAlgebraKernelLibrary`
+2. **GPULinearAlgebraProvider.cs** - high-level API for linear algebra operations
+3. **MatrixMath.cs** - the simplest entry point (`MatrixMath.SVDAsync`, `MultiplyAsync`, ...)
 
 ### Completed TODOs from MatrixMath.cs
 
@@ -133,44 +133,77 @@ This document describes the comprehensive GPU kernel implementation for DotCompu
 
 ### Usage Examples
 
+> Every snippet below is verified against the current build (see
+> `tests/Unit/DotCompute.Algorithms.Tests/LinearAlgebra/GPULinearAlgebraProviderTests.cs`).
+
+#### 1. Getting an accelerator
+
+Accelerators come from dependency injection — you do **not** need a kernel name (that is only for
+`IComputeOrchestrator.ExecuteAsync`, which runs *your* `[Kernel]` methods):
+
 ```csharp
-// High-level GPU linear algebra provider
-using var provider = new GPULinearAlgebraProvider(kernelManager, logger);
+var services = new ServiceCollection();
+services.AddLogging();
+services.AddDotComputeRuntime();
+services.AddCudaBackend();      // optional
+services.AddCpuBackend();
+var provider = services.BuildServiceProvider();
 
-// GPU-accelerated matrix multiplication
-var result = await provider.MultiplyAsync(matrixA, matrixB, gpuAccelerator);
-
-// GPU-accelerated QR decomposition
-var (Q, R) = await provider.QRDecompositionAsync(matrix, gpuAccelerator);
-
-// GPU-accelerated SVD
-var (U, S, VT) = await provider.SVDAsync(matrix, gpuAccelerator);
-
-// Automatic solver selection
-var solution = await provider.SolveAsync(A, b, gpuAccelerator, LinearSystemSolver.Auto);
+// All available accelerators (a backend that cannot initialize is simply absent):
+var accelerators = provider.GetServices<IAccelerator>().Where(a => a is not null).ToList();
+var gpu = accelerators.FirstOrDefault(a => a.Info.DeviceType == "CUDA");
+var cpu = accelerators.First(a => a.Info.DeviceType == "CPU");
+var accelerator = gpu ?? cpu;
 ```
+
+#### 2. Simplest path — `MatrixMath`
+
+```csharp
+using DotCompute.Algorithms.LinearAlgebra;
+
+var matrix = new Matrix(rows, cols);      // matrix[i, j] = value
+var (U, S, VT) = await MatrixMath.SVDAsync(matrix, accelerator);
+```
+
+`MatrixMath` also exposes `MultiplyAsync`, `QRDecompositionAsync`, `CholeskyAsync`, `SolveAsync`,
+`InverseAsync`, and friends. It picks GPU or CPU per operation and matrix size, and falls back to
+CPU automatically.
+
+#### 3. `GPULinearAlgebraProvider`
+
+```csharp
+// Directly...
+using var linalg = new GPULinearAlgebraProvider(logger);
+
+// ...or from DI:
+services.AddDotComputeAlgorithms();
+using var linalg = serviceProvider.GetRequiredService<GPULinearAlgebraProvider>();
+
+var product      = await linalg.MultiplyAsync(a, b, accelerator);
+var (Q, R)       = await linalg.QRDecompositionAsync(matrix, accelerator);
+var (U, S, VT)   = await linalg.SVDAsync(matrix, accelerator);
+var x            = await linalg.SolveAsync(a, b, accelerator, LinearSystemSolver.Auto);
+```
+
+The optional second constructor parameter is an `IKernelManager` used for custom GPU kernel
+execution. **No implementation ships today**, so leave it out: the decompositions and solvers run
+their CPU implementations, which is what the operations above are verified against.
 
 ### Kernel Source Access
 
+The kernel library type is `LinearAlgebraKernelLibrary` (namespace `DotCompute.Algorithms`):
+
 ```csharp
-// Get kernel source for specific operation and platform
-var kernelSource = LinearAlgebraKernels.GetKernelSource(
-    LinearAlgebraOperation.MatrixMultiply, 
-    "CUDA");
+using DotCompute.Algorithms;
 
-// Get optimized parameters
-var parameters = LinearAlgebraKernels.GetOptimizedParameters(
-    LinearAlgebraOperation.HouseholderVector,
-    (1024, 1024),
-    "GeForce RTX 4090");
-
-// Advanced operations
-var advancedKernel = AdvancedLinearAlgebraKernels.GetAdvancedKernelSource(
-    AdvancedLinearAlgebraOperation.TensorCore,
-    "CUDA",
-    precision: "mixed",
-    architecture: "Ampere");
+string kernelSource = LinearAlgebraKernelLibrary.GetKernelSource(
+    LinearAlgebraOperation.MatrixMultiply,
+    acceleratorType: "CUDA",
+    precision: "single");
 ```
+
+`LinearAlgebraOperation` here is `DotCompute.Algorithms.LinearAlgebraOperation`. Note that
+`GetOptimizedParameters` is `internal` and not part of the public API.
 
 ## Technical Specifications
 

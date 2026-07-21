@@ -29,14 +29,17 @@ namespace DotCompute.Algorithms.LinearAlgebra
         /// <summary>
         /// Initializes a new instance of the GPULinearAlgebraProvider.
         /// </summary>
-        /// <param name="kernelManager">Kernel manager for compilation and execution.</param>
         /// <param name="logger">Logger instance.</param>
-        public GPULinearAlgebraProvider(IKernelManager kernelManager, ILogger<GPULinearAlgebraProvider> logger)
+        /// <param name="kernelManager">
+        /// Optional kernel manager used for GPU kernel compilation/execution. No implementation
+        /// ships today; when omitted, operations use their CPU implementations (SVD, QR, Cholesky,
+        /// solvers all work). Previously this was a required parameter of a type with no
+        /// implementation, which made this class impossible to construct (GH #182).
+        /// </param>
+        public GPULinearAlgebraProvider(ILogger<GPULinearAlgebraProvider> logger, IKernelManager kernelManager = null)
         {
-            _ = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            // Initialize specialized components with kernel manager
             _matrixOps = new GpuMatrixOperations(kernelManager);
             _vectorOps = new GpuVectorOperations();
             _solverOps = new GpuSolverOperations(_matrixOps);
