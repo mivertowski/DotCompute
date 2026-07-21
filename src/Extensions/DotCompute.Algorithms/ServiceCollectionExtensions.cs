@@ -1,9 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions.Interfaces.Kernels;
+using DotCompute.Algorithms.LinearAlgebra;
 using DotCompute.Algorithms.LinearAlgebra.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms;
 
@@ -19,8 +22,13 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddDotComputeAlgorithms(this IServiceCollection services)
     {
-        // Register Linear Algebra components
-        services.TryAddTransient<GpuMatrixOperations>();
+        // Register Linear Algebra components. IKernelManager has no shipped implementation, so it
+        // is resolved optionally (GetService) — without this the registrations could not be
+        // resolved at all and GPULinearAlgebraProvider was impossible to construct (GH #182).
+        services.TryAddTransient(sp => new GpuMatrixOperations(sp.GetService<IKernelManager>()));
+        services.TryAddTransient(sp => new GPULinearAlgebraProvider(
+            sp.GetRequiredService<ILogger<GPULinearAlgebraProvider>>(),
+            sp.GetService<IKernelManager>()));
 
         // Note: Additional algorithm services can be registered here as they are developed
         // - Plugin loader services
@@ -37,7 +45,10 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for method chaining.</returns>
     public static IServiceCollection AddLinearAlgebra(this IServiceCollection services)
     {
-        services.TryAddTransient<GpuMatrixOperations>();
+        services.TryAddTransient(sp => new GpuMatrixOperations(sp.GetService<IKernelManager>()));
+        services.TryAddTransient(sp => new GPULinearAlgebraProvider(
+            sp.GetRequiredService<ILogger<GPULinearAlgebraProvider>>(),
+            sp.GetService<IKernelManager>()));
 
         return services;
     }
