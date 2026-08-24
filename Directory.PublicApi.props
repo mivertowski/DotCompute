@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <!-- Add PublicApiAnalyzers to projects importing this file -->
-    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
